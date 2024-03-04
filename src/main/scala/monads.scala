@@ -1,18 +1,20 @@
 package monads
 
 trait Monad[M[_]]:
-  def pure[A](a : A) : M[A]
+  def pure[A](a: A): M[A]
 
-  def map[A, B](ma : M[A])(f : A => B) : M[B]
+  def map[A, B](ma: M[A])(f: A => B): M[B]
 
-  def flatMap[A, B](ma : M[A])(f : A => M[B]) : M[B]
+  def flatMap[A, B](ma: M[A])(f: A => M[B]): M[B]
 
-  def flatten[A](mma : M[M[A]]) : M[A] =
+  def flatten[A](mma: M[M[A]]): M[A] =
     flatMap(mma)(identity)
 
 // ================ Identity monad ===================
 
-given[A] : Monad[[A] =>> A] with
+type Identity[A] = A
+
+given[A]: Monad[Identity] with
   override def pure[A](a: A): A = a
 
   override def map[A, B](ma: A)(f: A => B): B = f(ma)
@@ -43,7 +45,7 @@ given Monad[List] with
 
 type Reader[E, A] = E => A
 
-given[E] : Monad[[A] =>> Reader[E, A]] with
+given[E]: Monad[[A] =>> Reader[E, A]] with
   override def pure[A](a: A): Reader[E, A] =
     _ => a
 
@@ -56,13 +58,13 @@ given[E] : Monad[[A] =>> Reader[E, A]] with
 // ================ Writer monad ===================
 
 trait Monoid[A]:
-  extension (a : A) def <*>(b : A) : A
+  extension (a: A) def <*>(b: A): A
 
-  def empty : A
+  def empty: A
 
-case class Writer[A, L : Monoid](value : A, log : L)
+case class Writer[A, L: Monoid](value: A, log: L)
 
-given [L](using monoid : Monoid[L]): Monad[[A] =>> Writer[A, L]] with
+given [L](using monoid: Monoid[L]): Monad[[A] =>> Writer[A, L]] with
   override def pure[A](a: A): Writer[A, L] =
     Writer(a, monoid.empty)
 
@@ -76,10 +78,10 @@ given [L](using monoid : Monoid[L]): Monad[[A] =>> Writer[A, L]] with
 
 // ================ State monad ===================
 
-case class StateAndValue[S, A](state : S, value : A)
+case class StateAndValue[S, A](state: S, value: A)
 type State[S, A] = S => StateAndValue[S, A]
 
-given[S] : Monad[[A] =>> State[S, A]] with
+given[S]: Monad[[A] =>> State[S, A]] with
   override def pure[A](a: A): State[S, A] = s => StateAndValue(s, a)
 
   override def map[A, B](ma: State[S, A])(f: A => B): State[S, B] = s =>
