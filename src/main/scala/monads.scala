@@ -1,3 +1,5 @@
+package monads
+
 trait Monad[M[_]]:
   def pure[A](a : A) : M[A]
 
