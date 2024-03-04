@@ -8,6 +8,35 @@ trait Monad[M[_]]:
   def flatten[A](mma : M[M[A]]) : M[A] =
     flatMap(mma)(identity)
 
+// ================ Identity monad ===================
+
+given[A] : Monad[[A] =>> A] with
+  override def pure[A](a: A): A = a
+
+  override def map[A, B](ma: A)(f: A => B): B = f(ma)
+
+  override def flatMap[A, B](ma: A)(f: A => B): B = f(ma)
+
+// ================ Option monad ===================
+
+given Monad[Option] with
+  override def pure[A](a: A): Option[A] = Some(a)
+
+  override def map[A, B](ma: Option[A])(f: A => B): Option[B] = ???
+
+  override def flatMap[A, B](ma: Option[A])(f: A => Option[B]): Option[B] = ma match
+    case Some(a) => f(a)
+    case None => None
+
+// ================ List monad ===================
+
+given Monad[List] with
+  override def pure[A](a: A): List[A] = ???
+
+  override def map[A, B](ma: List[A])(f: A => B): List[B] = ???
+
+  override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ???
+
 // ================ Reader monad ===================
 
 type Reader[E, A] = E => A
