@@ -14,7 +14,7 @@ trait Monad[M[_]]:
 
 type Identity[A] = A
 
-given[A]: Monad[Identity] with
+given [A]: Monad[Identity] with
   override def pure[A](a: A): A = a
 
   override def map[A, B](ma: A)(f: A => B): B = f(ma)
@@ -45,7 +45,7 @@ given Monad[List] with
 
 type Reader[E, A] = E => A
 
-given[E]: Monad[[A] =>> Reader[E, A]] with
+given [E]: Monad[[A] =>> Reader[E, A]] with
   override def pure[A](a: A): Reader[E, A] =
     _ => a
 
@@ -81,7 +81,7 @@ given [L](using monoid: Monoid[L]): Monad[[A] =>> Writer[A, L]] with
 case class StateAndValue[S, A](state: S, value: A)
 type State[S, A] = S => StateAndValue[S, A]
 
-given[S]: Monad[[A] =>> State[S, A]] with
+given [S]: Monad[[A] =>> State[S, A]] with
   override def pure[A](a: A): State[S, A] = s => StateAndValue(s, a)
 
   override def map[A, B](ma: State[S, A])(f: A => B): State[S, B] = s =>
