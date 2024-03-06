@@ -60,6 +60,21 @@ given [M[_]](using m: Monad[M]): Monad[[A] =>> ListT[M, A]] with
 
 // ================ ReaderT ===================
 
+type ReaderT[M[_], E, A] = M[E => A]
+
+given [E]: MonadTrans[[M[_], A] =>> ReaderT[M, E, A]] with
+  override def lift[M[_], A](ma: M[A]): ReaderT[M, E, A] =
+    ???
+
+given [M[_], E](using m: Monad[M]): Monad[[A] =>> ReaderT[M, E, A]] with
+  override def pure[A](a: A): ReaderT[M, E, A] = m.pure(_ => a)
+
+  override def map[A, B](ma: ReaderT[M, E, A])(f: A => B): ReaderT[M, E, B] =
+    m.map(ma)(f.compose)
+
+  override def flatMap[A, B](ma: ReaderT[M, E, A])(f: A => ReaderT[M, E, B]): ReaderT[M, E, B] =
+    m.flatmap(ma)(???)
+
 // ================ WriterT ===================
 // ================ StateT ===================
 // ================ ContinuationT ===================
