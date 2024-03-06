@@ -26,7 +26,9 @@ given [A]: Monad[Identity] with
 given Monad[Option] with
   override def pure[A](a: A): Option[A] = Some(a)
 
-  override def map[A, B](ma: Option[A])(f: A => B): Option[B] = ???
+  override def map[A, B](ma: Option[A])(f: A => B): Option[B] = ma match
+    case Some(a) => Some(f(a))
+    case None => None
 
   override def flatMap[A, B](ma: Option[A])(f: A => Option[B]): Option[B] = ma match
     case Some(a) => f(a)
@@ -35,11 +37,15 @@ given Monad[Option] with
 // ================ List monad ===================
 
 given Monad[List] with
-  override def pure[A](a: A): List[A] = ???
+  override def pure[A](a: A): List[A] = a :: Nil
 
-  override def map[A, B](ma: List[A])(f: A => B): List[B] = ???
+  override def map[A, B](ma: List[A])(f: A => B): List[B] = ma match
+    case h :: t => f(h) :: map(t)(f)
+    case Nil => Nil
 
-  override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ???
+  override def flatMap[A, B](ma: List[A])(f: A => List[B]): List[B] = ma match
+    case h :: t => f(h) ::: flatMap(t)(f)
+    case Nil => Nil
 
 // ================ Reader monad ===================
 

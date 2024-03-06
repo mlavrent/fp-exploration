@@ -4,14 +4,14 @@ import monads.*
 import monads.given
 
 trait MonadTrans[T[_[_], _]]:
-  def lift[M[_], A](ma: M[A]): T[M, A]
+  def lift[M[_], A](using Monad[M])(ma: M[A]): T[M, A]
 
 // ================ IdentityT ===================
 
 type IdentityT[M[_], A] = M[A]
 
 given MonadTrans[IdentityT] with
-  override def lift[M[_], A](ma: M[A]): IdentityT[M, A] = ma
+  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): IdentityT[M, A] = ma
 
 given [M[_]](using Monad[M]): Monad[[A] =>> IdentityT[M, A]] with
   override def pure[A](a: A): IdentityT[M, A] = pure(a)
@@ -20,12 +20,14 @@ given [M[_]](using Monad[M]): Monad[[A] =>> IdentityT[M, A]] with
 
   override def flatMap[A, B](ma: IdentityT[M, A])(f: A => IdentityT[M, B]): IdentityT[M, B] = flatMap(ma)(f)
 
+type Identity[A] = A
+
 // ================ OptionT ===================
 
 type OptionT[M[_], A] = M[Option[A]]
 
 given MonadTrans[OptionT] with
-  override def lift[M[_], A](ma: M[A]): OptionT[M, A] = ???
+  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): OptionT[M, A] = m.map(ma)(Some(_))
 
 given [M[_]](using m: Monad[M]): Monad[[A] =>> OptionT[M, A]] with
   override def pure[A](a: A): OptionT[M, A] = m.pure(Some(a))
@@ -47,7 +49,7 @@ given [M[_]](using m: Monad[M]): Monad[[A] =>> OptionT[M, A]] with
 type ListT[M[_], A] = M[List[A]]
 
 given MonadTrans[ListT] with
-  override def lift[M[_], A](ma: M[A]): ListT[M, A] = ???
+  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): ListT[M, A] = m.map(ma)(_ :: Nil)
 
 given [M[_]](using m: Monad[M]): Monad[[A] =>> ListT[M, A]] with
   override def pure[A](a: A): ListT[M, A] = m.pure(a :: Nil)
@@ -63,8 +65,7 @@ given [M[_]](using m: Monad[M]): Monad[[A] =>> ListT[M, A]] with
 type ReaderT[M[_], E, A] = M[E => A]
 
 given [E]: MonadTrans[[M[_], A] =>> ReaderT[M, E, A]] with
-  override def lift[M[_], A](ma: M[A]): ReaderT[M, E, A] =
-    ???
+  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): ReaderT[M, E, A] = m.map(ma)(_ => _)
 
 given [M[_], E](using m: Monad[M]): Monad[[A] =>> ReaderT[M, E, A]] with
   override def pure[A](a: A): ReaderT[M, E, A] = m.pure(_ => a)
@@ -73,7 +74,9 @@ given [M[_], E](using m: Monad[M]): Monad[[A] =>> ReaderT[M, E, A]] with
     m.map(ma)(f.compose)
 
   override def flatMap[A, B](ma: ReaderT[M, E, A])(f: A => ReaderT[M, E, B]): ReaderT[M, E, B] =
-    m.flatmap(ma)(???)
+    m.flatMap(ma)(ra => 1)
+
+type Reader[E, A] = ReaderT[Identity, E, A]
 
 // ================ WriterT ===================
 // ================ StateT ===================
