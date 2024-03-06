@@ -73,7 +73,7 @@ given [M[_], E](using m: Monad[M]): Monad[[A] =>> ReaderT[M, E, A]] with
     m.map(ma)(f.compose)
 
   override def flatMap[A, B](ma: ReaderT[M, E, A])(f: A => ReaderT[M, E, B]): ReaderT[M, E, B] =
-    m.flatmap(ma)(???)
+    m.flatMap(ma)(???)
 
 // ================ WriterT ===================
 // ================ StateT ===================
