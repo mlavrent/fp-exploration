@@ -77,7 +77,7 @@ given [M[_], E](using m: Monad[M]): Monad[[A] =>> ReaderT[M, E, A]] with
     m.map(ma)(f.compose)
 
   override def flatMap[A, B](ma: ReaderT[M, E, A])(f: A => ReaderT[M, E, B]): ReaderT[M, E, B] =
-    m.flatMap(ma)(ra => f(1))
+    m.flatMap(ma)(ra => f(1)) // TODO: this is wrong, fix this
 
 type Reader[E, A] = ReaderT[Identity, E, A]
 
@@ -85,8 +85,8 @@ type Reader[E, A] = ReaderT[Identity, E, A]
 
 type WriterT[M[_], L, A] = M[Writer[A, L]]
 
-given [L]: MonadTrans[[M[_], A] =>> WriterT[M, E, A]] with
-  override def lift[M[_], A](using Monad[M])(ma: M[A]): T[M, A] = ???
+given [L](using monoid: Monoid[L]): MonadTrans[[M[_], A] =>> WriterT[M, L, A]] with
+  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): WriterT[M, L, A] = m.map(ma)(a => Writer(a, monoid.empty))
 
 // ================ StateT ===================
 // ================ ContinuationT ===================
