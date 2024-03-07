@@ -58,26 +58,35 @@ given [M[_]](using m: Monad[M]): Monad[[A] =>> ListT[M, A]] with
     m.map(ma)(_.map(f))
 
   override def flatMap[A, B](ma: ListT[M, A])(f: A => ListT[M, B]): ListT[M, B] =
-    m.flatMap(ma)(???)
+    m.flatMap(ma)(la =>
+      la match
+        case h :: t => f(h) // TODO: this isn't right, fix this
+        case Nil => m.pure(Nil))
 
 // ================ ReaderT ===================
 
 type ReaderT[M[_], E, A] = M[E => A]
 
 given [E]: MonadTrans[[M[_], A] =>> ReaderT[M, E, A]] with
-  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): ReaderT[M, E, A] = m.map(ma)(_ => _)
+  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): ReaderT[M, E, A] = m.map(ma)(Function.const)
 
 given [M[_], E](using m: Monad[M]): Monad[[A] =>> ReaderT[M, E, A]] with
-  override def pure[A](a: A): ReaderT[M, E, A] = m.pure(_ => a)
+  override def pure[A](a: A): ReaderT[M, E, A] = m.pure(Function.const(a))
 
   override def map[A, B](ma: ReaderT[M, E, A])(f: A => B): ReaderT[M, E, B] =
     m.map(ma)(f.compose)
 
   override def flatMap[A, B](ma: ReaderT[M, E, A])(f: A => ReaderT[M, E, B]): ReaderT[M, E, B] =
-    m.flatMap(ma)(ra => 1)
+    m.flatMap(ma)(ra => f(1))
 
 type Reader[E, A] = ReaderT[Identity, E, A]
 
 // ================ WriterT ===================
+
+type WriterT[M[_], L, A] = M[Writer[A, L]]
+
+given [L]: MonadTrans[[M[_], A] =>> WriterT[M, E, A]] with
+  override def lift[M[_], A](using Monad[M])(ma: M[A]): T[M, A] = ???
+
 // ================ StateT ===================
 // ================ ContinuationT ===================
