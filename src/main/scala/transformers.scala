@@ -88,5 +88,26 @@ type WriterT[M[_], L, A] = M[Writer[A, L]]
 given [L](using monoid: Monoid[L]): MonadTrans[[M[_], A] =>> WriterT[M, L, A]] with
   override def lift[M[_], A](using m: Monad[M])(ma: M[A]): WriterT[M, L, A] = m.map(ma)(a => Writer(a, monoid.empty))
 
+given [M[_], L](using m: Monad[M])(using Monoid[L])(using mt: MonadTrans[[M[_], A] =>> WriterT[M, L, A]]): Monad[[A] =>> WriterT[M, L, A]] with
+  override def pure[A](a: A): WriterT[M, L, A] = mt.lift(m.pure(a))
+
+  override def map[A, B](ma: WriterT[M, L, A])(f: A => B): WriterT[M, L, B] =
+    m.map(ma)(wa => Writer(f(wa.value), wa.log))
+
+  override def flatMap[A, B](ma: WriterT[M, L, A])(f: A => WriterT[M, L, B]): WriterT[M, L, B] = ???
+
 // ================ StateT ===================
+
+type StateT[M[_], S, A] = M[State[S, A]]
+
+given [S]: MonadTrans[[M[_], A] =>> StateT[M, S, A]] with
+  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): StateT[M, S, A] = m.map(ma)(a => s => StateAndValue(s, a))
+
+given [M[_], S](using m: Monad[M]): Monad[[A] =>> StateT[M, S, A]] with
+  override def pure[A](a: A): StateT[M, S, A] = ???
+
+  override def map[A, B](ma: StateT[M, S, A])(f: A => B): StateT[M, S, B] = ???
+
+  override def flatMap[A, B](ma: StateT[M, S, A])(f: A => StateT[M, S, B]): StateT[M, S, B] = ???
+
 // ================ ContinuationT ===================
