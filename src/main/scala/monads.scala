@@ -64,7 +64,7 @@ given [E]: Monad[[A] =>> Reader[E, A]] with
 // ================ Writer monad ===================
 
 trait Monoid[A]:
-  extension (a: A) def <*>(b: A): A
+  extension (a: A) def <>(b: A): A
 
   def empty: A
 
@@ -79,7 +79,7 @@ given [L](using monoid: Monoid[L]): Monad[[A] =>> Writer[A, L]] with
 
   override def flatMap[A, B](ma: Writer[A, L])(f: A => Writer[B, L]): Writer[B, L] =
     val mb = f(ma.value)
-    Writer(mb.value, ma.log <*> mb.log)
+    Writer(mb.value, ma.log <> mb.log)
 
 
 // ================ State monad ===================
@@ -99,3 +99,26 @@ given [S]: Monad[[A] =>> State[S, A]] with
     f(stateAndA.value)(stateAndA.state)
 
 // ================ Continuation monad ===================
+
+type Cont[R, A] = (A => R) => R
+
+given [R]: Monad[[A] =>> Cont[R, A]] with
+  override def pure[A](a: A): Cont[R, A] = k => k(a)
+
+  override def map[A, B](ma: Cont[R, A])(f: A => B): Cont[R, B] =
+    kb => ma(kb compose f)
+
+  override def flatMap[A, B](ma: Cont[R, A])(f: A => Cont[R, B]): Cont[R, B] =
+    kb => ma(a => f(a)(kb))
+
+// ================ Selection monad ===================
+
+type Sel[R, A] = (A => R) => A
+
+given [R]: Monad[[A] =>> Sel[R, A]] with
+  override def pure[A](a: A): Sel[R, A] = Function.const(a)
+
+  override def map[A, B](ma: Sel[R, A])(f: A => B): Sel[R, B] =
+   kb => f(ma(kb compose f))
+
+  override def flatMap[A, B](ma: Sel[R, A])(f: A => Sel[R, B]): Sel[R, B] = ???
