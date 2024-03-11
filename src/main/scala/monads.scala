@@ -119,6 +119,7 @@ given [R]: Monad[[A] =>> Sel[R, A]] with
   override def pure[A](a: A): Sel[R, A] = Function.const(a)
 
   override def map[A, B](ma: Sel[R, A])(f: A => B): Sel[R, B] =
-   kb => f(ma(kb compose f))
+    kb => f(ma(kb compose f))
 
-  override def flatMap[A, B](ma: Sel[R, A])(f: A => Sel[R, B]): Sel[R, B] = ???
+  override def flatMap[A, B](ma: Sel[R, A])(f: A => Sel[R, B]): Sel[R, B] =
+    kb => f(ma(kb compose {a => f(a)(kb)}))(kb)

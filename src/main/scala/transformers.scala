@@ -113,9 +113,11 @@ type SelectT[M[_], R, A] = (A => M[R]) => M[A]
 given [R]: MonadTrans[[M[_], A] =>> SelectT[M, R, A]] with
   override def lift[M[_], A](using Monad[M])(ma: M[A]): SelectT[M, R, A] = Function.const(ma)
 
-given [M[_], R]: Monad[[A] =>> SelectT[M, R, A]] with
-  override def pure[A](a: A): SelectT[M, R, A] = ???
+given [M[_], R](using m: Monad[M]): Monad[[A] =>> SelectT[M, R, A]] with
+  override def pure[A](a: A): SelectT[M, R, A] = _ => m.pure(a)
 
-  override def map[A, B](ma: SelectT[M, R, A])(f: A => B): SelectT[M, R, B] = ???
+  override def map[A, B](ma: SelectT[M, R, A])(f: A => B): SelectT[M, R, B] =
+    kb => m.map(ma(kb compose f))(f)
 
-  override def flatMap[A, B](ma: SelectT[M, R, A])(f: A => SelectT[M, R, B]): SelectT[M, R, B] = ???
+  override def flatMap[A, B](ma: SelectT[M, R, A])(f: A => SelectT[M, R, B]): SelectT[M, R, B] =
+    ???
