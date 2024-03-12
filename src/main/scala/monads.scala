@@ -68,18 +68,18 @@ trait Monoid[A]:
 
   def empty: A
 
-case class Writer[A, L: Monoid](value: A, log: L)
+case class WriteToLog[A, L: Monoid](value: A, log: L)
 
-given [L](using monoid: Monoid[L]): Monad[[A] =>> Writer[A, L]] with
-  override def pure[A](a: A): Writer[A, L] =
-    Writer(a, monoid.empty)
+given [L](using monoid: Monoid[L]): Monad[[A] =>> WriteToLog[A, L]] with
+  override def pure[A](a: A): WriteToLog[A, L] =
+    WriteToLog(a, monoid.empty)
 
-  override def map[A, B](ma: Writer[A, L])(f: A => B): Writer[B, L] =
-    Writer(f(ma.value), ma.log)
+  override def map[A, B](ma: WriteToLog[A, L])(f: A => B): WriteToLog[B, L] =
+    WriteToLog(f(ma.value), ma.log)
 
-  override def flatMap[A, B](ma: Writer[A, L])(f: A => Writer[B, L]): Writer[B, L] =
+  override def flatMap[A, B](ma: WriteToLog[A, L])(f: A => WriteToLog[B, L]): WriteToLog[B, L] =
     val mb = f(ma.value)
-    Writer(mb.value, ma.log <> mb.log)
+    WriteToLog(mb.value, ma.log <> mb.log)
 
 
 // ================ State monad ===================

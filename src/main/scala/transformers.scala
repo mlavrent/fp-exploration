@@ -54,26 +54,31 @@ given [E]: MonadTrans[[M[_], A] =>> ReaderT[M, E, A]] with
 given [M[_], E](using m: Monad[M]): Monad[[A] =>> ReaderT[M, E, A]] with
   override def pure[A](a: A): ReaderT[M, E, A] = _ => m.pure(a)
 
-  override def map[A, B](ma: ReaderT[M, E, A])(f: A => B): ReaderT[M, E, B] = e => m.map(ma(e))(f)
+  override def map[A, B](ma: ReaderT[M, E, A])(f: A => B): ReaderT[M, E, B] =
+    e => m.map(ma(e))(f)
 
-  override def flatMap[A, B](ma: ReaderT[M, E, A])(f: A => ReaderT[M, E, B]): ReaderT[M, E, B] = e => m.flatMap(ma(e))(a => f(a)(e))
+  override def flatMap[A, B](ma: ReaderT[M, E, A])(f: A => ReaderT[M, E, B]): ReaderT[M, E, B] =
+    e => m.flatMap(ma(e))(a => f(a)(e))
 
 type Reader[E, A] = ReaderT[Identity, E, A]
 
 // ================ WriterT ===================
 
-type WriterT[M[_], L, A] = M[Writer[A, L]]
+type WriterT[M[_], L, A] = M[WriteToLog[A, L]]
 
 given [L](using monoid: Monoid[L]): MonadTrans[[M[_], A] =>> WriterT[M, L, A]] with
-  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): WriterT[M, L, A] = m.map(ma)(a => Writer(a, monoid.empty))
+  override def lift[M[_], A](using m: Monad[M])(ma: M[A]): WriterT[M, L, A] = m.map(ma)(a => WriteToLog(a, monoid.empty))
 
 given [M[_], L](using m: Monad[M])(using Monoid[L])(using mt: MonadTrans[[M[_], A] =>> WriterT[M, L, A]]): Monad[[A] =>> WriterT[M, L, A]] with
   override def pure[A](a: A): WriterT[M, L, A] = mt.lift(m.pure(a))
 
   override def map[A, B](ma: WriterT[M, L, A])(f: A => B): WriterT[M, L, B] =
-    m.map(ma)(wa => Writer(f(wa.value), wa.log))
+    m.map(ma)(wa => WriteToLog(f(wa.value), wa.log))
 
-  override def flatMap[A, B](ma: WriterT[M, L, A])(f: A => WriterT[M, L, B]): WriterT[M, L, B] = ???
+  override def flatMap[A, B](ma: WriterT[M, L, A])(f: A => WriterT[M, L, B]): WriterT[M, L, B] =
+    ???
+
+type Writer[L, A] = WriterT[Identity, L, A]
 
 // ================ StateT ===================
 
@@ -102,7 +107,8 @@ given [M[_], R]: Monad[[A] =>> ContT[M, R, A]] with
   override def map[A, B](ma: ContT[M, R, A])(f: A => B): ContT[M, R, B] =
     kb => ma(kb compose f)
 
-  override def flatMap[A, B](ma: ContT[M, R, A])(f: A => ContT[M, R, B]): ContT[M, R, B] = ???
+  override def flatMap[A, B](ma: ContT[M, R, A])(f: A => ContT[M, R, B]): ContT[M, R, B] =
+    kb => ma(a => f(a)(kb))
 
 type Cont[R, A] = ContT[Identity, R, A]
 
@@ -120,4 +126,5 @@ given [M[_], R](using m: Monad[M]): Monad[[A] =>> SelectT[M, R, A]] with
     kb => m.map(ma(kb compose f))(f)
 
   override def flatMap[A, B](ma: SelectT[M, R, A])(f: A => SelectT[M, R, B]): SelectT[M, R, B] =
+    // kb => f(ma(kb compose {a => f(a)(kb)}))(kb)
     ???
