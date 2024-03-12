@@ -95,8 +95,15 @@ given [S]: Monad[[A] =>> State[S, A]] with
     StateAndValue(stateAndA.state, f(stateAndA.value))
 
   override def flatMap[A, B](ma: State[S, A])(f: A => State[S, B]): State[S, B] = s =>
-    var stateAndA = ma(s)
+    val stateAndA = ma(s)
     f(stateAndA.value)(stateAndA.state)
+
+def setState[S](using m: Monad[[A] =>> State[S, A]]): State[S, Unit] = m.pure(())
+
+def getState[S](using m: Monad[[A] =>> State[S, A]]): State[S, S] = s => StateAndValue(s, s)
+
+def modifyState[S](using m: Monad[[A] =>> State[S, A]])(f: S => S): State[S, Unit] =
+  s => StateAndValue(f(s), ())
 
 // ================ Continuation monad ===================
 
@@ -110,6 +117,10 @@ given [R]: Monad[[A] =>> Cont[R, A]] with
 
   override def flatMap[A, B](ma: Cont[R, A])(f: A => Cont[R, B]): Cont[R, B] =
     kb => ma(a => f(a)(kb))
+
+def runCont[R](cont: Cont[R, R]): R = cont(identity)
+
+def callCC[R, S, A](callee: Cont[R, A] => S): S = ???
 
 // ================ Selection monad ===================
 
