@@ -118,7 +118,10 @@ given [R]: Monad[[A] =>> Cont[R, A]] with
   override def flatMap[A, B](ma: Cont[R, A])(f: A => Cont[R, B]): Cont[R, B] =
     kb => ma(a => f(a)(kb))
 
-def runCont[R](cont: Cont[R, R]): R = cont(identity)
+def runCont[R, A](cont: Cont[R, A])(last_op: A => R): R =
+  cont(last_op)
+
+def evalCont[R](cont: Cont[R, R]): R = runCont(cont)(identity)
 
 def callCC[R, S, A](callee: Cont[R, A] => S): S = ???
 
